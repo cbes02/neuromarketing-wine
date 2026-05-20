@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuroLabel</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a08;
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --cream: #f5f0e8;
+    --red-wine: #6b1a2a;
+    --text: #e8e0d0;
+    --muted: #8a8070;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse at 20% 50%, rgba(107,26,42,0.15) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(201,168,76,0.08) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 40px 24px 60px;
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .logo-line {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+
+  .logo-line::before, .logo-line::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold));
+  }
+
+  .logo-line::after {
+    background: linear-gradient(90deg, var(--gold), transparent);
+  }
+
+  h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.8rem;
+    font-weight: 300;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .subtitle {
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+
+  /* Step indicator */
+  .steps {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 40px;
+  }
+
+  .step-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: all 0.3s;
+  }
+
+  .step-dot.active {
+    background: var(--gold);
+    width: 24px;
+    border-radius: 3px;
+  }
+
+  /* Panels */
+  .panel {
+    display: none;
+    animation: fadeIn 0.4s ease;
+  }
+
+  .panel.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Section title */
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.4rem;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--cream);
+    margin-bottom: 24px;
+    text-align: center;
+  }
+
+  /* Wine type selector */
+  .wine-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .wine-btn {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 4px;
+    padding: 20px 12px;
+    cursor: pointer;
+    transition: all 0.25s;
+    text-align: center;
+    color: var(--muted);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .wine-btn .emoji {
+    display: block;
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+  }
+
+  .wine-btn:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: rgba(201,168,76,0.05);
+  }
+
+  .wine-btn.selected {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.1);
+    color: var(--gold);
+  }
+
+  /* Camera area */
+  .camera-wrapper {
+    position: relative;
+    margin-bottom: 24px;
+  }
+
+  #video {
+    width: 100%;
+    aspect-ratio: 3/4;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid rgba(201,168,76,0.2);
+    background: #111;
+    display: block;
+  }
+
+  #canvas { display: none; }
+
+  .camera-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: 4px;
+    pointer-events: none;
+  }
+
+  /* Corner decorations */
+  .camera-overlay::before,
+  .camera-overlay::after {
+    content: '';
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    border-color: var(--gold);
+    border-style: solid;
+    opacity: 0.6;
+  }
+  .camera-overlay::before {
+    top: 12px; left: 12px;
+    border-width: 1px 0 0 1px;
+  }
+  .camera-overlay::after {
+    bottom: 12px; right: 12px;
+    border-width: 0 1px 1px 0;
+  }
+
+  .camera-hint {
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  /* Preview image */
+  #preview {
+    width: 100%;
+    aspect-ratio: 3/4;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid rgba(201,168,76,0.3);
+    display: none;
+    margin-bottom: 16px;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    border: none;
+    border-radius: 4px;
+    color: var(--bg);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.25s;
+    margin-bottom: 12px;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(201,168,76,0.3);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-secondary {
+    width: 100%;
+    padding: 14px;
+    background: transparent;
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 4px;
+    color: var(--muted);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.25s;
+    margin-bottom: 12px;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  /* Loading */
+  .loading {
+    text-align: center;
+    padding: 60px 0;
+  }
+
+  .wine-glass-anim {
+    font-size: 3rem;
+    animation: sway 1.5s ease-in-out infinite;
+    display: block;
+    margin-bottom: 24px;
+  }
+
+  @keyframes sway {
+    0%, 100% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+  }
+
+  .loading-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.2rem;
+    font-style: italic;
+    color: var(--muted);
+  }
+
+  /* Results */
+  .score-hero {
+    text-align: center;
+    padding: 40px 0 32px;
+    position: relative;
+  }
+
+  .score-hero::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 20%;
+    right: 20%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  .score-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.35em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .score-number {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 5.5rem;
+    font-weight: 300;
+    color: var(--gold);
+    line-height: 1;
+    display: block;
+  }
+
+  .score-max {
+    font-size: 1rem;
+    color: var(--muted);
+    font-family: 'Cormorant Garamond', serif;
+  }
+
+  .confidence-tag {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 4px 14px;
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 20px;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  /* Dimension scores */
+  .dimensions {
+    padding: 32px 0;
+  }
+
+  .dim-item {
+    margin-bottom: 24px;
+  }
+
+  .dim-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+  }
+
+  .dim-name {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .dim-score {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem;
+    color: var(--gold);
+  }
+
+  .dim-bar {
+    height: 2px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 1px;
+    overflow: hidden;
+  }
+
+  .dim-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--red-wine), var(--gold));
+    border-radius: 1px;
+    transition: width 1s cubic-bezier(0.4,0,0.2,1);
+    width: 0;
+  }
+
+  /* Descriptions */
+  .descriptions {
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding-top: 28px;
+    margin-top: 8px;
+  }
+
+  .desc-item {
+    margin-bottom: 20px;
+  }
+
+  .desc-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: 0.7;
+    margin-bottom: 6px;
+  }
+
+  .desc-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem;
+    font-style: italic;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* Disclaimer */
+  .disclaimer {
+    text-align: center;
+    font-size: 0.6rem;
+    color: rgba(138,128,112,0.4);
+    letter-spacing: 0.1em;
+    margin-top: 32px;
+    line-height: 1.8;
+  }
+
+  /* Error */
+  .error-box {
+    background: rgba(107,26,42,0.2);
+    border: 1px solid rgba(107,26,42,0.5);
+    border-radius: 4px;
+    padding: 16px;
+    text-align: center;
+    font-size: 0.8rem;
+    color: #e07070;
+    margin-top: 16px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo-line">
+      <h1>NeuroLabel</h1>
+    </div>
+    <p class="subtitle">Wine Label Intelligence</p>
+  </header>
+
+  <div class="steps">
+    <div class="step-dot active" id="dot-0"></div>
+    <div class="step-dot" id="dot-1"></div>
+    <div class="step-dot" id="dot-2"></div>
+  </div>
+
+  <!-- STEP 1: Tipo vino -->
+  <div class="panel active" id="panel-0">
+    <p class="section-title">Che tipo di vino?</p>
+    <div class="wine-grid">
+      <button class="wine-btn" onclick="selectWine('Rosso', this)">
+        <span class="emoji">🍷</span>Rosso
+      </button>
+      <button class="wine-btn" onclick="selectWine('Bianco', this)">
+        <span class="emoji">🥂</span>Bianco
+      </button>
+      <button class="wine-btn" onclick="selectWine('Rosato', this)">
+        <span class="emoji">🌸</span>Rosato
+      </button>
+      <button class="wine-btn" onclick="selectWine('Spumante', this)">
+        <span class="emoji">✨</span>Spumante
+      </button>
+      <button class="wine-btn" onclick="selectWine('Passito', this)" style="grid-column: span 2">
+        <span class="emoji">🍯</span>Passito / Liquoroso
+      </button>
+    </div>
+    <button class="btn-primary" id="btn-next-0" onclick="goToStep(1)" disabled>
+      Continua
+    </button>
+  </div>
+
+  <!-- STEP 2: Fotocamera -->
+  <div class="panel" id="panel-1">
+    <p class="section-title">Inquadra l'etichetta</p>
+    <div class="camera-wrapper">
+      <video id="video" autoplay playsinline></video>
+      <div class="camera-overlay"></div>
+      <canvas id="canvas"></canvas>
+    </div>
+    <img id="preview" alt="Foto acquisita">
+    <p class="camera-hint">Tieni la bottiglia ferma e ben illuminata</p>
+    <button class="btn-primary" id="btn-capture" onclick="capturePhoto()">
+      Scatta Foto
+    </button>
+    <button class="btn-secondary" id="btn-analyze" onclick="analyzeLabel()" disabled style="display:none">
+      Analizza Etichetta →
+    </button>
+    <button class="btn-secondary" onclick="retakePhoto()" id="btn-retake" style="display:none">
+      Rifai la foto
+    </button>
+  </div>
+
+  <!-- STEP 3: Loading -->
+  <div class="panel" id="panel-loading">
+    <div class="loading">
+      <span class="wine-glass-anim">🍷</span>
+      <p class="loading-text">Analizzo l'etichetta...</p>
+    </div>
+  </div>
+
+  <!-- STEP 4: Results -->
+  <div class="panel" id="panel-results">
+    <div class="score-hero">
+      <p class="score-label">NeuroScore Visivo</p>
+      <span class="score-number" id="score-finale">—</span>
+      <span class="score-max">/ 10</span>
+      <br>
+      <span class="confidence-tag" id="confidence-tag">—</span>
+    </div>
+
+    <div class="dimensions">
+      <div class="dim-item">
+        <div class="dim-header">
+          <span class="dim-name">Eleganza</span>
+          <span class="dim-score" id="score-eleganza">—</span>
+        </div>
+        <div class="dim-bar"><div class="dim-fill" id="bar-eleganza"></div></div>
+      </div>
+      <div class="dim-item">
+        <div class="dim-header">
+          <span class="dim-name">Qualità Design</span>
+          <span class="dim-score" id="score-design">—</span>
+        </div>
+        <div class="dim-bar"><div class="dim-fill" id="bar-design"></div></div>
+      </div>
+      <div class="dim-item">
+        <div class="dim-header">
+          <span class="dim-name">Coerenza Cromatica</span>
+          <span class="dim-score" id="score-coerenza">—</span>
+        </div>
+        <div class="dim-bar"><div class="dim-fill" id="bar-coerenza"></div></div>
+      </div>
+    </div>
+
+    <div class="descriptions" id="descriptions"></div>
+
+    <p class="disclaimer">
+      Analisi basata su metodologia NeuroMarketing IULM<br>
+      Score visivo calcolato tramite AI — solo a scopo orientativo
+    </p>
+
+    <button class="btn-secondary" onclick="resetApp()" style="margin-top:32px">
+      Analizza un'altra bottiglia
+    </button>
+  </div>
+
+  <div id="error-container"></div>
+</div>
+
+<script>
+  // Config — cambia con URL del tuo backend Render
+  const BACKEND_URL = 'https://TUO-BACKEND.onrender.com';
+
+  let selectedWine = null;
+  let capturedBlob = null;
+  let stream = null;
+
+  function selectWine(tipo, btn) {
+    document.querySelectorAll('.wine-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedWine = tipo;
+    document.getElementById('btn-next-0').disabled = false;
+  }
+
+  function goToStep(step) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.step-dot').forEach((d, i) => {
+      d.classList.toggle('active', i === step);
+    });
+    document.getElementById(`panel-${step}`).classList.add('active');
+    if (step === 1) startCamera();
+  }
+
+  async function startCamera() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1080 } }
+      });
+      document.getElementById('video').srcObject = stream;
+    } catch (e) {
+      showError('Fotocamera non accessibile. Controlla i permessi.');
+    }
+  }
+
+  function capturePhoto() {
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+
+    canvas.toBlob(blob => {
+      capturedBlob = blob;
+      const preview = document.getElementById('preview');
+      preview.src = URL.createObjectURL(blob);
+      preview.style.display = 'block';
+      video.style.display = 'none';
+      document.querySelector('.camera-overlay').style.display = 'none';
+
+      document.getElementById('btn-capture').style.display = 'none';
+      document.getElementById('btn-analyze').style.display = 'block';
+      document.getElementById('btn-analyze').disabled = false;
+      document.getElementById('btn-retake').style.display = 'block';
+
+      if (stream) stream.getTracks().forEach(t => t.stop());
+    }, 'image/jpeg', 0.92);
+  }
+
+  function retakePhoto() {
+    capturedBlob = null;
+    document.getElementById('preview').style.display = 'none';
+    document.getElementById('video').style.display = 'block';
+    document.querySelector('.camera-overlay').style.display = 'block';
+    document.getElementById('btn-capture').style.display = 'block';
+    document.getElementById('btn-analyze').style.display = 'none';
+    document.getElementById('btn-retake').style.display = 'none';
+    startCamera();
+  }
+
+  async function analyzeLabel() {
+    if (!capturedBlob || !selectedWine) return;
+
+    // Show loading
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-loading').classList.add('active');
+    document.getElementById('error-container').innerHTML = '';
+
+    const formData = new FormData();
+    formData.append('image', capturedBlob, 'etichetta.jpg');
+    formData.append('tipo_vino', selectedWine);
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/analyze`, {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await res.json();
+
+      if (!data.success) throw new Error(data.error);
+
+      // Populate results
+      document.getElementById('score-finale').textContent = data.scores.finale;
+      document.getElementById('confidence-tag').textContent =
+        `Confidenza ${Math.round(data.confidenza * 100)}%`;
+
+      document.getElementById('score-eleganza').textContent = data.scores.eleganza;
+      document.getElementById('score-design').textContent = data.scores.design;
+      document.getElementById('score-coerenza').textContent = data.scores.coerenza;
+
+      // Animate bars after show
+      setTimeout(() => {
+        document.getElementById('bar-eleganza').style.width = `${data.scores.eleganza * 10}%`;
+        document.getElementById('bar-design').style.width = `${data.scores.design * 10}%`;
+        document.getElementById('bar-coerenza').style.width = `${data.scores.coerenza * 10}%`;
+      }, 300);
+
+      // Descriptions
+      const descHtml = Object.entries(data.descrizioni).map(([k, v]) => `
+        <div class="desc-item">
+          <p class="desc-label">${k.charAt(0).toUpperCase() + k.slice(1)}</p>
+          <p class="desc-text">${v}</p>
+        </div>
+      `).join('');
+      document.getElementById('descriptions').innerHTML = descHtml;
+
+      // Show results
+      document.getElementById('panel-results').classList.add('active');
+      document.querySelector('.steps').style.display = 'none';
+
+    } catch (e) {
+      document.getElementById('panel-1').classList.add('active');
+      showError(`Errore: ${e.message}`);
+    }
+  }
+
+  function showError(msg) {
+    document.getElementById('error-container').innerHTML =
+      `<div class="error-box">${msg}</div>`;
+  }
+
+  function resetApp() {
+    selectedWine = null;
+    capturedBlob = null;
+    document.querySelectorAll('.wine-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('btn-next-0').disabled = true;
+    document.getElementById('preview').style.display = 'none';
+    document.getElementById('video').style.display = 'block';
+    document.querySelector('.camera-overlay').style.display = 'block';
+    document.getElementById('btn-capture').style.display = 'block';
+    document.getElementById('btn-analyze').style.display = 'none';
+    document.getElementById('btn-retake').style.display = 'none';
+    document.querySelector('.steps').style.display = 'flex';
+    document.querySelectorAll('.step-dot').forEach((d, i) => d.classList.toggle('active', i === 0));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-0').classList.add('active');
+    document.getElementById('error-container').innerHTML = '';
+    if (stream) stream.getTracks().forEach(t => t.stop());
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+google-generativeai
+sentence-transformers
+scikit-learn
+imbalanced-learn
+numpy
+pillow
+python-multipart

@@ -80,4 +80,6 @@ Rispondi SOLO in JSON senza markdown:
         }
 
     except Exception as ex:
+        import traceback
+        print(traceback.format_exc())
         return JSONResponse(status_code=500, content={"success": False, "error": str(ex)})

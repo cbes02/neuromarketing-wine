@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuroLabel — Analisi Scientifica dell'Etichetta</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0c0b09;
+  --gold: #c9a84c;
+  --gold-light: #e8c97a;
+  --gold-dim: rgba(201,168,76,0.15);
+  --cream: #f2ede4;
+  --text: #e0d8cc;
+  --muted: #7a7060;
+  --wine: #5c1a28;
+  --error: #c0392b;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Raleway', sans-serif;
+  font-weight: 400;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Background grain */
+body::after {
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none;
+  z-index:9999;
+  opacity:0.6;
+}
+
+body::before {
+  content:'';
+  position:fixed;
+  inset:0;
+  background:
+    radial-gradient(ellipse at 15% 40%, rgba(92,26,40,0.18) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 15%, rgba(201,168,76,0.07) 0%, transparent 45%);
+  pointer-events:none;
+  z-index:0;
+}
+
+.screen {
+  display:none;
+  min-height:100vh;
+  position:relative;
+  z-index:1;
+  animation: fadeUp 0.5s ease both;
+}
+.screen.active { display:flex; flex-direction:column; }
+
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(18px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.inner {
+  max-width: 520px;
+  width:100%;
+  margin:0 auto;
+  padding: 48px 28px 72px;
+  flex:1;
+  display:flex;
+  flex-direction:column;
+}
+
+/* ── LOGO ── */
+.logo {
+  text-align:center;
+  margin-bottom:48px;
+}
+.logo-rule {
+  display:flex;
+  align-items:center;
+  gap:14px;
+  justify-content:center;
+  margin-bottom:6px;
+}
+.logo-rule::before,.logo-rule::after {
+  content:'';
+  flex:1;
+  height:1px;
+  background:linear-gradient(90deg, transparent, var(--gold));
+}
+.logo-rule::after { background:linear-gradient(90deg,var(--gold),transparent); }
+.logo h1 {
+  font-family:'Playfair Display',serif;
+  font-size:2.6rem;
+  font-weight:400;
+  color:var(--gold);
+  letter-spacing:0.08em;
+}
+.logo-sub {
+  font-size:0.65rem;
+  letter-spacing:0.35em;
+  color:var(--muted);
+  text-transform:uppercase;
+  margin-top:6px;
+}
+
+/* ── PROGRESS DOTS ── */
+.progress {
+  display:flex;
+  justify-content:center;
+  gap:6px;
+  margin-bottom:44px;
+}
+.dot {
+  width:5px; height:5px;
+  border-radius:50%;
+  background:var(--muted);
+  transition:all 0.3s;
+}
+.dot.active { background:var(--gold); width:20px; border-radius:3px; }
+.dot.done   { background:var(--gold); opacity:0.4; }
+
+/* ── SECTION TITLE ── */
+.section-title {
+  font-family:'Playfair Display',serif;
+  font-size:1.55rem;
+  font-weight:400;
+  font-style:italic;
+  color:var(--cream);
+  margin-bottom:10px;
+  line-height:1.3;
+}
+.section-sub {
+  font-size:0.8rem;
+  color:var(--muted);
+  margin-bottom:32px;
+  line-height:1.6;
+  letter-spacing:0.02em;
+}
+
+/* ── BUTTONS ── */
+.btn-primary {
+  width:100%;
+  padding:17px;
+  background:linear-gradient(135deg, var(--gold), var(--gold-light));
+  border:none;
+  border-radius:3px;
+  color:#0c0b09;
+  font-family:'Raleway',sans-serif;
+  font-size:0.72rem;
+  font-weight:600;
+  letter-spacing:0.3em;
+  text-transform:uppercase;
+  cursor:pointer;
+  transition:all 0.25s;
+  margin-top:auto;
+}
+.btn-primary:hover { transform:translateY(-1px); box-shadow:0 8px 28px rgba(201,168,76,0.28); }
+.btn-primary:disabled { opacity:0.3; cursor:not-allowed; transform:none; box-shadow:none; }
+
+.btn-secondary {
+  width:100%;
+  padding:13px;
+  background:transparent;
+  border:1px solid rgba(201,168,76,0.25);
+  border-radius:3px;
+  color:var(--muted);
+  font-family:'Raleway',sans-serif;
+  font-size:0.68rem;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  cursor:pointer;
+  transition:all 0.25s;
+  margin-top:10px;
+}
+.btn-secondary:hover { border-color:var(--gold); color:var(--gold); }
+
+/* ── WINE GRID ── */
+.wine-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-bottom:32px;
+}
+.wine-opt {
+  background:rgba(255,255,255,0.025);
+  border:1px solid rgba(201,168,76,0.18);
+  border-radius:3px;
+  padding:20px 12px;
+  text-align:center;
+  cursor:pointer;
+  transition:all 0.22s;
+  color:var(--muted);
+  font-size:0.72rem;
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  font-family:'Raleway',sans-serif;
+}
+.wine-opt .em { display:block; font-size:1.9rem; margin-bottom:8px; }
+.wine-opt:hover { border-color:rgba(201,168,76,0.5); color:var(--text); }
+.wine-opt.sel  { border-color:var(--gold); background:rgba(201,168,76,0.08); color:var(--gold); }
+.wine-opt.full { grid-column:span 2; }
+
+/* ── CAMERA ── */
+.cam-wrap {
+  position:relative;
+  margin-bottom:20px;
+  border-radius:3px;
+  overflow:hidden;
+  border:1px solid rgba(201,168,76,0.18);
+  background:#0a0a08;
+}
+#video {
+  width:100%;
+  aspect-ratio:4/3;
+  object-fit:cover;
+  display:block;
+}
+#preview {
+  width:100%;
+  aspect-ratio:4/3;
+  object-fit:cover;
+  display:none;
+}
+.cam-corner {
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+}
+.cam-corner::before,.cam-corner::after {
+  content:'';
+  position:absolute;
+  width:22px; height:22px;
+  border-color:var(--gold);
+  border-style:solid;
+  opacity:0.5;
+}
+.cam-corner::before { top:10px; left:10px; border-width:1px 0 0 1px; }
+.cam-corner::after  { bottom:10px; right:10px; border-width:0 1px 1px 0; }
+
+/* Drag & drop zone */
+.drop-zone {
+  border:1px dashed rgba(201,168,76,0.3);
+  border-radius:3px;
+  padding:28px 20px;
+  text-align:center;
+  cursor:pointer;
+  transition:all 0.22s;
+  margin-bottom:20px;
+  background:rgba(255,255,255,0.02);
+}
+.drop-zone:hover, .drop-zone.dragover {
+  border-color:var(--gold);
+  background:rgba(201,168,76,0.05);
+}
+.drop-zone p { font-size:0.75rem; color:var(--muted); letter-spacing:0.1em; }
+.drop-zone .drop-icon { font-size:1.6rem; margin-bottom:8px; display:block; }
+#fileInput { display:none; }
+
+.cam-hint {
+  font-size:0.65rem;
+  color:var(--muted);
+  text-align:center;
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  margin-bottom:20px;
+}
+
+/* ── SHELF OPTIONS ── */
+.shelf-grid {
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-bottom:32px;
+}
+.shelf-opt {
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:16px 18px;
+  background:rgba(255,255,255,0.025);
+  border:1px solid rgba(201,168,76,0.18);
+  border-radius:3px;
+  cursor:pointer;
+  transition:all 0.22s;
+  color:var(--muted);
+  font-size:0.78rem;
+  letter-spacing:0.08em;
+  font-family:'Raleway',sans-serif;
+}
+.shelf-opt .shelf-icon { font-size:1.3rem; flex-shrink:0; }
+.shelf-opt:hover { border-color:rgba(201,168,76,0.5); color:var(--text); }
+.shelf-opt.sel   { border-color:var(--gold); background:rgba(201,168,76,0.08); color:var(--gold); }
+
+/* ── CONTACT ── */
+.contact-img-wrap {
+  width:100%;
+  aspect-ratio:16/7;
+  border-radius:3px;
+  overflow:hidden;
+  margin-bottom:28px;
+  background:linear-gradient(135deg, #1a0f08 0%, #2d1a0e 40%, #1a0f08 100%);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+  border:1px solid rgba(201,168,76,0.12);
+}
+.contact-img-inner {
+  text-align:center;
+  padding:20px;
+}
+.contact-img-inner .ci-title {
+  font-family:'Playfair Display',serif;
+  font-size:1.2rem;
+  color:var(--gold);
+  margin-bottom:6px;
+}
+.contact-img-inner .ci-sub {
+  font-size:0.68rem;
+  color:var(--muted);
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+}
+.contact-img-wrap::before {
+  content:'';
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(ellipse at 30% 50%, rgba(92,26,40,0.3) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 50%, rgba(201,168,76,0.12) 0%, transparent 60%);
+}
+
+.tel-field {
+  width:100%;
+  padding:14px 18px;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(201,168,76,0.2);
+  border-radius:3px;
+  color:var(--text);
+  font-family:'Raleway',sans-serif;
+  font-size:0.9rem;
+  margin-bottom:10px;
+  outline:none;
+  transition:border-color 0.2s;
+}
+.tel-field:focus { border-color:var(--gold); }
+.tel-field::placeholder { color:var(--muted); }
+.tel-skip {
+  font-size:0.65rem;
+  color:var(--muted);
+  text-align:center;
+  letter-spacing:0.1em;
+  margin-top:4px;
+  margin-bottom:24px;
+}
+
+/* ── LOADING ── */
+#screen-loading {
+  align-items:center;
+  justify-content:center;
+}
+.loading-center {
+  text-align:center;
+}
+.glass-anim {
+  font-size:3.5rem;
+  display:block;
+  margin-bottom:24px;
+  animation:sway 1.8s ease-in-out infinite;
+}
+@keyframes sway {
+  0%,100% { transform:rotate(-6deg); }
+  50%      { transform:rotate(6deg); }
+}
+.loading-title {
+  font-family:'Playfair Display',serif;
+  font-size:1.3rem;
+  font-style:italic;
+  color:var(--cream);
+  margin-bottom:8px;
+}
+.loading-sub {
+  font-size:0.7rem;
+  color:var(--muted);
+  letter-spacing:0.15em;
+}
+
+/* ── RESULT ── */
+.score-hero {
+  text-align:center;
+  padding:36px 0 32px;
+  position:relative;
+}
+.score-hero::after {
+  content:'';
+  position:absolute;
+  bottom:0; left:15%; right:15%;
+  height:1px;
+  background:linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.score-eyebrow {
+  font-size:0.62rem;
+  letter-spacing:0.4em;
+  color:var(--muted);
+  text-transform:uppercase;
+  margin-bottom:14px;
+}
+.score-big {
+  font-family:'Playfair Display',serif;
+  font-size:6rem;
+  font-weight:400;
+  color:var(--gold);
+  line-height:1;
+  display:block;
+}
+.score-ten { font-family:'Playfair Display',serif; font-size:1rem; color:var(--muted); }
+.conf-badge {
+  display:inline-block;
+  margin-top:14px;
+  padding:4px 16px;
+  border:1px solid rgba(201,168,76,0.25);
+  border-radius:20px;
+  font-size:0.62rem;
+  letter-spacing:0.22em;
+  color:var(--muted);
+  text-transform:uppercase;
+}
+
+.dims { padding:28px 0; }
+.dim { margin-bottom:22px; }
+.dim-row {
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  margin-bottom:7px;
+}
+.dim-name { font-size:0.65rem; letter-spacing:0.22em; text-transform:uppercase; color:var(--muted); }
+.dim-val  { font-family:'Playfair Display',serif; font-size:1.25rem; color:var(--gold); }
+.bar { height:2px; background:rgba(255,255,255,0.05); border-radius:1px; overflow:hidden; }
+.bar-fill { height:100%; background:linear-gradient(90deg,var(--wine),var(--gold)); border-radius:1px; width:0; transition:width 1.1s cubic-bezier(0.4,0,0.2,1); }
+
+/* ── MESSAGE PAGE ── */
+.msg-icon { font-size:3rem; text-align:center; margin-bottom:20px; }
+.msg-title {
+  font-family:'Playfair Display',serif;
+  font-size:1.6rem;
+  font-weight:400;
+  color:var(--cream);
+  margin-bottom:16px;
+  line-height:1.3;
+}
+.msg-body {
+  font-size:0.88rem;
+  color:var(--muted);
+  line-height:1.8;
+  margin-bottom:32px;
+}
+
+/* ── ERROR ── */
+.err-box {
+  background:rgba(192,57,43,0.12);
+  border:1px solid rgba(192,57,43,0.35);
+  border-radius:3px;
+  padding:14px 16px;
+  font-size:0.78rem;
+  color:#e07070;
+  text-align:center;
+  margin-top:16px;
+}
+
+/* ── DISCLAIMER ── */
+.disclaimer {
+  font-size:0.58rem;
+  color:rgba(122,112,96,0.5);
+  letter-spacing:0.08em;
+  line-height:1.9;
+  text-align:center;
+  margin-top:28px;
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 0 — LANDING
+══════════════════════════════════════════ -->
+<div class="screen active" id="s0">
+  <div class="inner" style="justify-content:center; text-align:center;">
+    <div class="logo" style="margin-bottom:40px;">
+      <div class="logo-rule"><h1>NeuroLabel</h1></div>
+      <p class="logo-sub">Wine Label Intelligence</p>
+    </div>
+
+    <p style="font-family:'Playfair Display',serif;font-size:1.1rem;font-style:italic;color:var(--cream);margin-bottom:18px;line-height:1.5;">
+      La sua etichetta comunica abbastanza?
+    </p>
+    <p style="font-size:0.82rem;color:var(--muted);line-height:1.85;margin-bottom:48px;max-width:380px;margin-left:auto;margin-right:auto;">
+      In pochi secondi, la nostra piattaforma analizza l'etichetta del suo vino attraverso i principi del neuromarketing e restituisce un punteggio visivo scientifico su eleganza, qualità del design e coerenza cromatica.<br><br>
+      Un primo sguardo obiettivo su come il mercato percepisce il suo prodotto.
+    </p>
+
+    <button class="btn-primary" onclick="go(1)" style="max-width:300px;margin:0 auto;">
+      Inizia l'analisi
+    </button>
+
+    <p class="disclaimer" style="margin-top:32px;">
+      Analisi basata su metodologia NeuroMarketing IULM<br>
+      Prof. Russo — Università IULM Milano
+    </p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 1 — TIPO VINO
+══════════════════════════════════════════ -->
+<div class="screen" id="s1">
+  <div class="inner">
+    <div class="logo"><div class="logo-rule"><h1>NeuroLabel</h1></div></div>
+    <div class="progress">
+      <div class="dot active" id="d0"></div>
+      <div class="dot" id="d1"></div>
+      <div class="dot" id="d2"></div>
+      <div class="dot" id="d3"></div>
+    </div>
+
+    <p class="section-title">Che tipologia di vino?</p>
+    <p class="section-sub">Selezionare la categoria del prodotto per calibrare l'analisi cromatica.</p>
+
+    <div class="wine-grid">
+      <div class="wine-opt" onclick="selectWine('Rosso',this)"><span class="em">🍷</span>Rosso</div>
+      <div class="wine-opt" onclick="selectWine('Bianco',this)"><span class="em">🥂</span>Bianco</div>
+      <div class="wine-opt" onclick="selectWine('Rosato',this)"><span class="em">🌸</span>Rosato</div>
+      <div class="wine-opt" onclick="selectWine('Spumante',this)"><span class="em">✨</span>Spumante</div>
+      <div class="wine-opt full" onclick="selectWine('Passito',this)"><span class="em">🍯</span>Passito / Liquoroso</div>
+    </div>
+
+    <div id="err1" class="err-box" style="display:none;">Selezionare la tipologia di vino per proseguire.</div>
+    <button class="btn-primary" onclick="next1()">Avanti</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 2 — FOTOCAMERA / DRAG DROP
+══════════════════════════════════════════ -->
+<div class="screen" id="s2">
+  <div class="inner">
+    <div class="logo"><div class="logo-rule"><h1>NeuroLabel</h1></div></div>
+    <div class="progress">
+      <div class="dot done" id="d0b"></div>
+      <div class="dot active"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+
+    <p class="section-title">Etichetta fronte bottiglia</p>
+    <p class="section-sub">Inquadri l'etichetta con la fotocamera oppure carichi un'immagine. Assicurarsi che sia ben illuminata e leggibile.</p>
+
+    <!-- Camera -->
+    <div class="cam-wrap" id="camWrap">
+      <video id="video" autoplay playsinline></video>
+      <img id="preview" alt="Etichetta caricata">
+      <div class="cam-corner"></div>
+    </div>
+
+    <p class="cam-hint" id="camHint">Inquadra l'etichetta frontale</p>
+
+    <!-- Drag & drop -->
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+      <span class="drop-icon">📁</span>
+      <p>Trascina qui un'immagine oppure clicca per caricare</p>
+    </div>
+    <input type="file" id="fileInput" accept="image/*">
+
+    <div id="err2" class="err-box" style="display:none;">Acquisire o caricare un'immagine dell'etichetta per proseguire.</div>
+
+    <button class="btn-primary" id="btnCapture" onclick="capturePhoto()">Scatta foto</button>
+    <button class="btn-secondary" id="btnNext2" onclick="next2()" style="display:none;">Avanti →</button>
+    <button class="btn-secondary" id="btnRetake" onclick="retake()" style="display:none;">Riprendi la foto</button>
+    <canvas id="canvas" style="display:none;"></canvas>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 3 — SCAFFALE
+══════════════════════════════════════════ -->
+<div class="screen" id="s3">
+  <div class="inner">
+    <div class="logo"><div class="logo-rule"><h1>NeuroLabel</h1></div></div>
+    <div class="progress">
+      <div class="dot done"></div>
+      <div class="dot done"></div>
+      <div class="dot active"></div>
+      <div class="dot"></div>
+    </div>
+
+    <p class="section-title">Dove è posizionato il prodotto?</p>
+    <p class="section-sub">La collocazione sullo scaffale influisce sulla visibilità e sul primo impatto percettivo del consumatore.</p>
+
+    <div class="shelf-grid">
+      <div class="shelf-opt" onclick="selectShelf('sopra',this)">
+        <span class="shelf-icon">⬆️</span>
+        <span>Sopra la testa — scaffale superiore</span>
+      </div>
+      <div class="shelf-opt" onclick="selectShelf('occhi',this)">
+        <span class="shelf-icon">👀</span>
+        <span>Altezza occhi — eye level (massima visibilità)</span>
+      </div>
+      <div class="shelf-opt" onclick="selectShelf('mano',this)">
+        <span class="shelf-icon">✋</span>
+        <span>Altezza mano — mid shelf</span>
+      </div>
+      <div class="shelf-opt" onclick="selectShelf('vita',this)">
+        <span class="shelf-icon">⬇️</span>
+        <span>Altezza vita — scaffale inferiore</span>
+      </div>
+      <div class="shelf-opt" onclick="selectShelf('piede',this)">
+        <span class="shelf-icon">🦶</span>
+        <span>Altezza piede — scaffale basso</span>
+      </div>
+    </div>
+
+    <div id="err3" class="err-box" style="display:none;">Selezionare la posizione sullo scaffale per proseguire.</div>
+    <button class="btn-primary" onclick="next3()">Avanti</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 4 — CONTATTO
+══════════════════════════════════════════ -->
+<div class="screen" id="s4">
+  <div class="inner">
+    <div class="logo"><div class="logo-rule"><h1>NeuroLabel</h1></div></div>
+    <div class="progress">
+      <div class="dot done"></div>
+      <div class="dot done"></div>
+      <div class="dot done"></div>
+      <div class="dot active"></div>
+    </div>
+
+    <p class="section-title">Scopra il punteggio completo</p>
+    <p class="section-sub">Vuole ricevere la valutazione neuroscientifico completa del suo vino e sapere come migliorare il suo posizionamento sul mercato?</p>
+
+    <div class="contact-img-wrap">
+      <div class="contact-img-inner">
+        <p class="ci-title">Consulenza NeuroMarketing</p>
+        <p class="ci-sub">Prof. Russo — IULM Milano</p>
+      </div>
+    </div>
+
+    <p style="font-size:0.82rem;color:var(--muted);line-height:1.8;margin-bottom:22px;">
+      Lasci il suo contatto telefonico per fissare una prima consulenza con il <strong style="color:var(--cream);">Prof. Russo</strong> e scoprire in anteprima il punteggio neuroscientifico completo della sua etichetta.
+    </p>
+
+    <input class="tel-field" type="tel" id="telInput" placeholder="Numero di telefono (opzionale)">
+    <p class="tel-skip">Campo facoltativo — può proseguire anche senza</p>
+
+    <button class="btn-primary" onclick="next4()">Avanti — mostrami il punteggio</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 5 — LOADING
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-loading" style="align-items:center;justify-content:center;">
+  <div class="loading-center">
+    <span class="glass-anim">🍷</span>
+    <p class="loading-title">Analizzo l'etichetta…</p>
+    <p class="loading-sub">elaborazione in corso</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 6 — RISULTATO
+══════════════════════════════════════════ -->
+<div class="screen" id="s-result">
+  <div class="inner">
+    <div class="logo"><div class="logo-rule"><h1>NeuroLabel</h1></div></div>
+
+    <div class="score-hero">
+      <p class="score-eyebrow">NeuroScore Visivo</p>
+      <span class="score-big" id="rFinale">—</span>
+      <span class="score-ten">/ 10</span><br>
+      <span class="conf-badge" id="rConf">—</span>
+    </div>
+
+    <div class="dims">
+      <div class="dim">
+        <div class="dim-row">
+          <span class="dim-name">Eleganza</span>
+          <span class="dim-val" id="rEleg">—</span>
+        </div>
+        <div class="bar"><div class="bar-fill" id="bEleg"></div></div>
+      </div>
+      <div class="dim">
+        <div class="dim-row">
+          <span class="dim-name">Qualità Design</span>
+          <span class="dim-val" id="rDes">—</span>
+        </div>
+        <div class="bar"><div class="bar-fill" id="bDes"></div></div>
+      </div>
+      <div class="dim">
+        <div class="dim-row">
+          <span class="dim-name">Coerenza Cromatica</span>
+          <span class="dim-val" id="rCoer">—</span>
+        </div>
+        <div class="bar"><div class="bar-fill" id="bCoer"></div></div>
+      </div>
+    </div>
+
+    <p class="disclaimer">
+      Analisi basata su metodologia NeuroMarketing IULM<br>
+      Score visivo calcolato tramite AI — solo a scopo orientativo
+    </p>
+
+    <button class="btn-primary" id="btnMsg" onclick="showMessage()" style="margin-top:32px;">
+      Scopri cosa significa →
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 7A — MESSAGGIO ALTO (9-10)
+══════════════════════════════════════════ -->
+<div class="screen" id="s-high">
+  <div class="inner" style="justify-content:center;">
+    <div class="logo"><div class="logo-rule"><h1>NeuroLabel</h1></div></div>
+
+    <div class="msg-icon">🏆</div>
+    <p class="msg-title">Un'etichetta già forte sul mercato.</p>
+    <p class="msg-body">
+      Il suo prodotto mostra un'identità visiva di alto livello, capace di catturare l'attenzione e comunicare qualità al primo sguardo.<br><br>
+      Ma sa esattamente <em>perché</em> funziona? Quali elementi specifici creano questo impatto? E come rafforzarli ulteriormente per massimizzare le vendite?<br><br>
+      Il nostro team la contatterà presto per una sessione approfondita con il <strong style="color:var(--cream);">Prof. Russo</strong> e scoprire insieme i punti di forza della sua etichetta.
+    </p>
+
+    <button class="btn-primary" onclick="restart()">Analizza un altro prodotto</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 7B — MESSAGGIO BASSO (≤8)
+══════════════════════════════════════════ -->
+<div class="screen" id="s-low">
+  <div class="inner" style="justify-content:center;">
+    <div class="logo"><div class="logo-rule"><h1>NeuroLabel</h1></div></div>
+
+    <div class="msg-icon">📊</div>
+    <p class="msg-title">Margini di crescita concreti.</p>
+    <p class="msg-body">
+      L'analisi evidenzia aree di miglioramento significative nell'impatto visivo della sua etichetta. In un mercato sempre più competitivo, ogni dettaglio estetico influenza la decisione d'acquisto.<br><br>
+      Il nostro team la contatterà a breve per illustrarle come una consulenza con il <strong style="color:var(--cream);">Prof. Russo</strong> possa trasformare l'identità visiva del suo prodotto e rafforzarne il posizionamento sullo scaffale.
+    </p>
+
+    <button class="btn-primary" onclick="restart()">Analizza un altro prodotto</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN ERROR
+══════════════════════════════════════════ -->
+<div class="screen" id="s-err">
+  <div class="inner" style="justify-content:center; text-align:center;">
+    <div class="logo"><div class="logo-rule"><h1>NeuroLabel</h1></div></div>
+    <p style="font-size:2rem;margin-bottom:20px;">⚠️</p>
+    <p class="section-title">Errore nell'analisi</p>
+    <p class="section-sub" id="errMsg">Si è verificato un errore. Riprovare.</p>
+    <button class="btn-primary" onclick="restart()">Ricomincia</button>
+  </div>
+</div>
+
+<script>
+const BACKEND = 'https://neuromarketing-wine.onrender.com';
+
+let state = {
+  wine: null,
+  shelf: null,
+  blob: null,
+  stream: null,
+  score: null
+};
+
+// ── NAVIGATION ──────────────────────────────
+function go(n) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const t = document.getElementById('s'+n) || document.getElementById(n);
+  if(t) t.classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ── STEP 1 ───────────────────────────────────
+function selectWine(tipo, el) {
+  document.querySelectorAll('.wine-opt').forEach(e => e.classList.remove('sel'));
+  el.classList.add('sel');
+  state.wine = tipo;
+  document.getElementById('err1').style.display = 'none';
+}
+function next1() {
+  if(!state.wine) { document.getElementById('err1').style.display='block'; return; }
+  go(2);
+  startCamera();
+}
+
+// ── STEP 2 ───────────────────────────────────
+async function startCamera() {
+  try {
+    state.stream = await navigator.mediaDevices.getUserMedia({
+      video:{ facingMode:'environment', width:{ideal:1280} }
+    });
+    document.getElementById('video').srcObject = state.stream;
+    document.getElementById('video').style.display = 'block';
+    document.getElementById('preview').style.display = 'none';
+    document.getElementById('btnCapture').style.display = 'block';
+    document.getElementById('btnNext2').style.display = 'none';
+    document.getElementById('btnRetake').style.display = 'none';
+  } catch(e) {
+    document.getElementById('camWrap').style.display = 'none';
+  }
+}
+
+function capturePhoto() {
+  const v = document.getElementById('video');
+  const c = document.getElementById('canvas');
+  c.width = v.videoWidth; c.height = v.videoHeight;
+  c.getContext('2d').drawImage(v,0,0);
+  c.toBlob(b => setBlob(b), 'image/jpeg', 0.92);
+  if(state.stream) state.stream.getTracks().forEach(t=>t.stop());
+}
+
+function setBlob(b) {
+  state.blob = b;
+  const url = URL.createObjectURL(b);
+  document.getElementById('preview').src = url;
+  document.getElementById('preview').style.display = 'block';
+  document.getElementById('video').style.display = 'none';
+  document.getElementById('dropZone').style.display = 'none';
+  document.getElementById('btnCapture').style.display = 'none';
+  document.getElementById('btnNext2').style.display = 'block';
+  document.getElementById('btnRetake').style.display = 'block';
+  document.getElementById('camHint').textContent = 'Immagine acquisita';
+  document.getElementById('err2').style.display = 'none';
+}
+
+function retake() {
+  state.blob = null;
+  document.getElementById('preview').style.display = 'none';
+  document.getElementById('video').style.display = 'block';
+  document.getElementById('dropZone').style.display = 'block';
+  document.getElementById('btnCapture').style.display = 'block';
+  document.getElementById('btnNext2').style.display = 'none';
+  document.getElementById('btnRetake').style.display = 'none';
+  document.getElementById('camHint').textContent = "Inquadra l'etichetta frontale";
+  startCamera();
+}
+
+function next2() {
+  if(!state.blob) { document.getElementById('err2').style.display='block'; return; }
+  go(3);
+}
+
+// Drag & drop
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if(f && f.type.startsWith('image/')) loadFile(f);
+});
+document.getElementById('fileInput').addEventListener('change', e => {
+  if(e.target.files[0]) loadFile(e.target.files[0]);
+});
+function loadFile(f) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    fetch(reader.result).then(r=>r.blob()).then(b => setBlob(b));
+  };
+  reader.readAsDataURL(f);
+}
+
+// ── STEP 3 ───────────────────────────────────
+function selectShelf(pos, el) {
+  document.querySelectorAll('.shelf-opt').forEach(e => e.classList.remove('sel'));
+  el.classList.add('sel');
+  state.shelf = pos;
+  document.getElementById('err3').style.display = 'none';
+}
+function next3() {
+  if(!state.shelf) { document.getElementById('err3').style.display='block'; return; }
+  go(4);
+}
+
+// ── STEP 4 ───────────────────────────────────
+function next4() {
+  analyze();
+}
+
+// ── ANALISI ─────────────────────────────────
+async function analyze() {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-loading').classList.add('active');
+  window.scrollTo(0,0);
+
+  const fd = new FormData();
+  fd.append('image', state.blob, 'etichetta.jpg');
+  fd.append('tipo_vino', state.wine);
+
+  try {
+    const res = await fetch(`${BACKEND}/analyze`, { method:'POST', body:fd });
+    const data = await res.json();
+    if(!data.success) throw new Error(data.error);
+
+    state.score = data.scores.finale;
+
+    // Popola risultati
+    document.getElementById('rFinale').textContent = data.scores.finale;
+    document.getElementById('rConf').textContent = `Confidenza ${Math.round(data.confidenza*100)}%`;
+    document.getElementById('rEleg').textContent = data.scores.eleganza;
+    document.getElementById('rDes').textContent  = data.scores.design;
+    document.getElementById('rCoer').textContent = data.scores.coerenza;
+
+    go('s-result');
+
+    setTimeout(() => {
+      document.getElementById('bEleg').style.width = `${data.scores.eleganza*10}%`;
+      document.getElementById('bDes').style.width  = `${data.scores.design*10}%`;
+      document.getElementById('bCoer').style.width = `${data.scores.coerenza*10}%`;
+    }, 300);
+
+  } catch(e) {
+    document.getElementById('errMsg').textContent = `Errore: ${e.message}. Verificare la connessione e riprovare.`;
+    go('s-err');
+  }
+}
+
+// ── MESSAGGIO FINALE ─────────────────────────
+function showMessage() {
+  if(state.score >= 9) go('s-high');
+  else go('s-low');
+}
+
+// ── RESTART ──────────────────────────────────
+function restart() {
+  state = { wine:null, shelf:null, blob:null, stream:null, score:null };
+  document.querySelectorAll('.wine-opt').forEach(e=>e.classList.remove('sel'));
+  document.querySelectorAll('.shelf-opt').forEach(e=>e.classList.remove('sel'));
+  document.getElementById('telInput').value = '';
+  go(0);
+}
+</script>
+</body>
+</html>

@@ -29,13 +29,13 @@ def get_gemini():
 def get_vectorizer():
     global _vectorizer
     if _vectorizer is None:
-        with open("tfidf_vectorizer.pkl", "rb") as f:
+        with open("models/tfidf_vectorizer.pkl", "rb") as f:
             _vectorizer = pickle.load(f)
     return _vectorizer
 
 def get_model(nome):
     if nome not in _models:
-        with open(f"svm_{nome}.pkl", "rb") as f:
+        with open(f"models/svm_{nome}.pkl", "rb") as f:
             _models[nome] = pickle.load(f)
     return _models[nome]
 

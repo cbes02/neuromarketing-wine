@@ -1,7 +1,7 @@
 from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-import os, io, json, random, pickle
+import os, io, json, random, pickle, traceback
 import numpy as np
 from PIL import Image
 
@@ -14,9 +14,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Lazy loading
 _gemini = None
-_embedder = None
+_vectorizer = None
 _models = {}
 
 def get_gemini():
@@ -27,16 +26,16 @@ def get_gemini():
         _gemini = genai.GenerativeModel('gemini-2.5-flash')
     return _gemini
 
-def get_embedder():
-    global _embedder
-    if _embedder is None:
-        from sentence_transformers import SentenceTransformer
-        _embedder = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
-    return _embedder
+def get_vectorizer():
+    global _vectorizer
+    if _vectorizer is None:
+        with open("tfidf_vectorizer.pkl", "rb") as f:
+            _vectorizer = pickle.load(f)
+    return _vectorizer
 
 def get_model(nome):
     if nome not in _models:
-        with open(f"models/svm_{nome}.pkl", "rb") as f:
+        with open(f"svm_{nome}.pkl", "rb") as f:
             _models[nome] = pickle.load(f)
     return _models[nome]
 
@@ -64,10 +63,10 @@ Rispondi SOLO in JSON senza markdown:
         descrizioni = json.loads(testo)
 
         testo_combined = f"{descrizioni['eleganza']} {descrizioni['design']} {descrizioni['coerenza']}"
-        emb = get_embedder().encode(testo_combined).reshape(1, -1)
+        X = get_vectorizer().transform([testo_combined]).toarray()
 
         def score(nome):
-            v = float(np.clip(get_model(nome).predict(emb)[0], 0, 10))
+            v = float(np.clip(get_model(nome).predict(X)[0], 0, 10))
             return round(min(10, max(0, v + random.gauss(0, 0.2))), 1)
 
         e, d, c = score("eleganza"), score("design"), score("coerenza")
@@ -80,6 +79,5 @@ Rispondi SOLO in JSON senza markdown:
         }
 
     except Exception as ex:
-        import traceback
         print(traceback.format_exc())
         return JSONResponse(status_code=500, content={"success": False, "error": str(ex)})

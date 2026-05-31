@@ -896,17 +896,8 @@ async function analyze() {
     // Popola risultati
     document.getElementById('rFinale').textContent = data.scores.finale;
     document.getElementById('rConf').textContent = `Confidenza ${Math.round(data.confidenza*100)}%`;
-    document.getElementById('rEleg').textContent = data.scores.eleganza;
-    document.getElementById('rDes').textContent  = data.scores.design;
-    document.getElementById('rCoer').textContent = data.scores.coerenza;
 
     go('s-result');
-
-    setTimeout(() => {
-      document.getElementById('bEleg').style.width = `${data.scores.eleganza*10}%`;
-      document.getElementById('bDes').style.width  = `${data.scores.design*10}%`;
-      document.getElementById('bCoer').style.width = `${data.scores.coerenza*10}%`;
-    }, 300);
 
   } catch(e) {
     document.getElementById('errMsg').textContent = `Errore: ${e.message}. Verificare la connessione e riprovare.`;

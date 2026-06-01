@@ -885,7 +885,7 @@ async function analyze() {
   const fd = new FormData();
   fd.append('image', state.blob, 'etichetta.jpg');
   fd.append('tipo_vino', state.wine);
-
+  fd.append('posizione', state.shelf);
 
   try {
     const res = await fetch(`${BACKEND}/analyze`, { method:'POST', body:fd });

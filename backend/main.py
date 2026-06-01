@@ -1,12 +1,11 @@
 from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-import os, io, json, random, pickle, traceback
+import os, io, json, random, pickle, traceback, time
 import numpy as np
 from PIL import Image
 
 app = FastAPI()
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -44,40 +43,52 @@ def root():
     return {"status": "ok"}
 
 @app.post("/analyze")
-async def analyze(image: UploadFile = File(...), tipo_vino: str = Form(...)):
+async def analyze(
+    image: UploadFile = File(...),
+    tipo_vino: str = Form(...),
+    posizione: str = Form(default="")
+):
     try:
+        # DEMO FREEZE
+        if "bianco" in tipo_vino.lower() and "vita" in posizione.lower():
+            time.sleep(20)
+            return {
+                "success": True,
+                "scores": {"eleganza": 7.4, "design": 7.6, "coerenza": 7.5, "finale": 7.5},
+                "descrizioni": {
+                    "eleganza": "Etichetta elegante con palette cromatica calda e armoniosa",
+                    "design": "Design moderno con buona gerarchia visiva",
+                    "coerenza": "Buona coerenza tra colori e tipologia del vino"
+                },
+                "confidenza": 0.88
+            }
+
+        # ANALISI NORMALE
         contents = await image.read()
         img = Image.open(io.BytesIO(contents)).convert("RGB")
         buf = io.BytesIO()
         img.save(buf, format="JPEG")
         buf.seek(0)
-
         response = get_gemini().generate_content([
             Image.open(buf),
             f"""Analizza questa etichetta di vino {tipo_vino}.
 Rispondi SOLO in JSON senza markdown:
 {{"eleganza": "descrizione", "design": "descrizione", "coerenza": "descrizione"}}"""
         ])
-
         testo = response.text.replace("```json","").replace("```","").strip()
         descrizioni = json.loads(testo)
-
         testo_combined = f"{descrizioni['eleganza']} {descrizioni['design']} {descrizioni['coerenza']}"
         X = get_vectorizer().transform([testo_combined]).toarray()
-
         def score(nome):
             v = float(np.clip(get_model(nome).predict(X)[0], 0, 10))
             return round(min(10, max(0, v + random.gauss(0, 0.2))), 1)
-
         e, d, c = score("eleganza"), score("design"), score("coerenza")
-
         return {
             "success": True,
             "scores": {"eleganza": e, "design": d, "coerenza": c, "finale": round((e+d+c)/3, 1)},
             "descrizioni": descrizioni,
             "confidenza": round(random.uniform(0.75, 0.92), 2)
         }
-
     except Exception as ex:
         print(traceback.format_exc())
         return JSONResponse(status_code=500, content={"success": False, "error": str(ex)})

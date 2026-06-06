@@ -75,9 +75,23 @@ Rispondi SOLO in JSON senza markdown:
 
         e, d, c = score("eleganza"), score("design"), score("coerenza")
 
+        # Media ponderata (pesi neurologici)
+        score_ponderato = (e * 1.0 + d * 0.9 + c * 0.8) / 2.7
+
+        # Bonus/malus scaffale
+        bonus_scaffale = {
+            "occhi": 0.50,
+            "mano": 0.25,
+            "vita": 0.0,
+            "testa": -0.25,
+            "piede": -0.50
+        }
+        bonus = bonus_scaffale.get(posizione.lower(), 0.0)
+        score_finale = round(min(10, max(0, score_ponderato + bonus)), 1)
+
         return {
             "success": True,
-            "scores": {"eleganza": e, "design": d, "coerenza": c, "finale": round((e+d+c)/3, 1)},
+            "scores": {"eleganza": e, "design": d, "coerenza": c, "finale": score_finale},
             "descrizioni": descrizioni,
             "confidenza": round(random.uniform(0.75, 0.92), 2)
         }

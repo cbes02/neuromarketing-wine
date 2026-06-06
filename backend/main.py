@@ -58,7 +58,8 @@ async def analyze(
 
         response = get_gemini().generate_content([
             Image.open(buf),
-            f"""Analizza questa etichetta di vino {tipo_vino}.
+            f"""Guarda questa etichetta di vino e identifica prima che tipo di vino è.
+Poi, come esperto di comunicazione visiva, analizza i tre aspetti principali dell'etichetta.
 Rispondi SOLO in JSON senza markdown:
 {{"eleganza": "descrizione", "design": "descrizione", "coerenza": "descrizione"}}"""
         ])

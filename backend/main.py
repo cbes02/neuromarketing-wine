@@ -83,7 +83,7 @@ Rispondi SOLO in JSON senza markdown:
             "occhi": 0.50,
             "mano": 0.25,
             "vita": 0.0,
-            "testa": -0.25,
+            "sopra": -0.25,
             "piede": -0.50
         }
         bonus = bonus_scaffale.get(posizione.lower(), 0.0)

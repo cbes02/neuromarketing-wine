@@ -96,4 +96,4 @@ Poi apri `index.html` nel browser.
 
 ## Progetto
 
-NeuroMarketing — IULM Milano — Chiara Beretta 2026
+NeuroMarketing — IULM Milano — Chiara Beretta & Rebecca Magarotto 2026

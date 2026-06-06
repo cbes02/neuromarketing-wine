@@ -1,7 +1,7 @@
 from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-import os, io, json, random, pickle, traceback, time
+import os, io, json, random, pickle, traceback
 import numpy as np
 from PIL import Image
 
@@ -49,20 +49,6 @@ async def analyze(
     tipo_vino: str = Form(...),
     posizione: str = Form(default="")
 ):
-    # DEMO per vino bianco
-    if tipo_vino.lower() == "bianco":
-        time.sleep(20)
-        return {
-            "success": True,
-            "scores": {"eleganza": 7.4, "design": 7.6, "coerenza": 7.5, "finale": 7.5},
-            "descrizioni": {
-                "eleganza": "Etichetta elegante con palette cromatica delicata e raffinata, impatto visivo immediato e sofisticato",
-                "design": "Design pulito e moderno con ottima gerarchia visiva e leggibilità immediata",
-                "coerenza": "Buona coerenza cromatica con il tipo di vino, colori armoniosi e coerenti"
-            },
-            "confidenza": 0.88
-        }
-
     try:
         contents = await image.read()
         img = Image.open(io.BytesIO(contents)).convert("RGB")

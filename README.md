@@ -11,44 +11,42 @@ Applicazione web che analizza le etichette dei vini tramite intelligenza artific
 1. L'utente carica o scatta una foto dell'etichetta
 2. Il backend chiama **Gemini 2.5 Flash** con un prompt calibrato sui criteri IULM
 3. Le descrizioni vengono vettorizzate con **TF-IDF**
-4. Tre modelli **Gradient Boosting** predicono i punteggi di eleganza, design e coerenza cromatica
+4. Tre modelli **Gradient Boosting** predicono i punteggi di eleganza, design e coerenza
 5. Il punteggio finale viene calcolato tramite **media ponderata** con pesi neurologici + bonus/malus posizione scaffale
 
 ---
 
 ## Struttura del repo
 
+```
 neuromarketing-wine/
-├── index.html          # Frontend (GitHub Pages)
+├── index.html
 └── backend/
-├── main.py         # API FastAPI
-├── requirements.txt
-└── models/
-├── model_eleganza.pkl
-├── model_design.pkl
-├── model_coerenza.pkl
-└── tfidf_vectorizer.pkl
+    ├── main.py
+    ├── requirements.txt
+    └── models/
+        ├── model_eleganza.pkl
+        ├── model_design.pkl
+        ├── model_coerenza.pkl
+        └── tfidf_vectorizer.pkl
+```
 
 ---
 
 ## Esecuzione locale
 
-### Backend
 ```bash
 cd backend
 pip install -r requirements.txt
-export GEMINI_API_KEY="AIzaSyChOgFLYevbieO762YfFAYdQpAcaM5FHag"
+export GEMINI_API_KEY="la_tua_chiave"
 uvicorn main:app --host 0.0.0.0 --port 8000
 ```
-
-### Frontend
-Apri `index.html` nel browser o usa Live Server.
 
 ---
 
 ## API Keys necessarie
 
-- **Gemini API Key** → [Google AI Studio](https://aistudio.google.com) — inserire come variabile d'ambiente `GEMINI_API_KEY`
+- **Gemini API Key** → [Google AI Studio](https://aistudio.google.com) — variabile d'ambiente `GEMINI_API_KEY`
 
 ---
 
@@ -58,11 +56,10 @@ Apri `index.html` nel browser o usa Live Server.
 - **Backend:** FastAPI (Python) — Render.com
 - **AI:** Gemini 2.5 Flash (Google)
 - **ML:** Gradient Boosting, TF-IDF, SMOTE, Sentence Transformers
-- **Training:** Google Colab (GPU T4)
+- **Training:** Google Colab GPU T4
 
 ---
 
 ## Progetto
 
-NeuroMarketing — IULM Milano  
-Chiara Beretta e Rebecca Magarotto— 2026
+NeuroMarketing — IULM Milano — Chiara Beretta 2026

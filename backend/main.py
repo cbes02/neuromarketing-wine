@@ -15,7 +15,7 @@ app.add_middleware(
 )
 
 _gemini = None
-_vectorizer = None
+_vectorizers = {}
 _models = {}
 
 def get_gemini():
@@ -26,12 +26,11 @@ def get_gemini():
         _gemini = genai.GenerativeModel('gemini-2.5-flash')
     return _gemini
 
-def get_vectorizer():
-    global _vectorizer
-    if _vectorizer is None:
-        with open("models/tfidf_vectorizer.pkl", "rb") as f:
-            _vectorizer = pickle.load(f)
-    return _vectorizer
+def get_vectorizer(nome):
+    if nome not in _vectorizers:
+        with open(f"models/vectorizer_{nome}.pkl", "rb") as f:
+            _vectorizers[nome] = pickle.load(f)
+    return _vectorizers[nome]
 
 def get_model(nome):
     if nome not in _models:
@@ -67,19 +66,17 @@ Rispondi SOLO in JSON senza markdown:
         testo = response.text.replace("```json","").replace("```","").strip()
         descrizioni = json.loads(testo)
 
-        testo_combined = f"{descrizioni['eleganza']} {descrizioni['design']} {descrizioni['coerenza']}"
-        X = get_vectorizer().transform([testo_combined]).toarray()
-
-        def score(nome):
+        def score(nome, testo):
+            X = get_vectorizer(nome).transform([testo]).toarray()
             v = float(np.clip(get_model(nome).predict(X)[0], 0, 10))
             return round(min(10, max(0, v + random.gauss(0, 0.2))), 1)
 
-        e, d, c = score("eleganza"), score("design"), score("coerenza")
+        e = score("eleg", descrizioni['eleganza'])
+        d = score("des",  descrizioni['design'])
+        c = score("coer", descrizioni['coerenza'])
 
-        # Media ponderata (pesi neurologici)
         score_ponderato = (e * 1.0 + d * 0.9 + c * 0.8) / 2.7
 
-        # Bonus/malus scaffale
         bonus_scaffale = {
             "occhi": 0.50,
             "mano": 0.25,

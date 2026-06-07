@@ -16,7 +16,7 @@ L'app è già deployata e funzionante — basta aprire il link da qualsiasi disp
 
 1. L'utente carica o scatta una foto dell'etichetta fronte
 2. Il backend chiama **Gemini 2.5 Flash** con un prompt calibrato sui criteri IULM
-3. Le descrizioni vengono vettorizzate con **TF-IDF**
+3. Le descrizioni di eleganza, design e coerenza vengono vettorizzate separatamente con **tre TF-IDF distinti**
 4. Tre modelli **Gradient Boosting** predicono i punteggi di eleganza, design e coerenza cromatica
 5. Il punteggio finale viene calcolato tramite **media ponderata** con pesi neurologici + bonus/malus posizione scaffale
 
@@ -34,7 +34,9 @@ neuromarketing-wine/
         ├── model_eleganza.pkl
         ├── model_design.pkl
         ├── model_coerenza.pkl
-        └── tfidf_vectorizer.pkl
+        ├── vectorizer_eleg.pkl
+        ├── vectorizer_des.pkl
+        └── vectorizer_coer.pkl
 ```
 
 ---
@@ -89,7 +91,7 @@ Poi apri `index.html` nel browser.
 - **Frontend:** HTML/CSS/JavaScript — GitHub Pages
 - **Backend:** FastAPI (Python) — Render.com
 - **AI:** Gemini 2.5 Flash (Google)
-- **ML:** Gradient Boosting, TF-IDF, SMOTE, Sentence Transformers
+- **ML:** Gradient Boosting, TF-IDF separato per dimensione, SMOTE, Sentence Transformers
 - **Training:** Google Colab GPU T4
 
 ---

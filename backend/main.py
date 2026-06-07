@@ -66,14 +66,14 @@ Rispondi SOLO in JSON senza markdown:
         testo = response.text.replace("```json","").replace("```","").strip()
         descrizioni = json.loads(testo)
 
-        def score(nome, testo):
-            X = get_vectorizer(nome).transform([testo]).toarray()
-            v = float(np.clip(get_model(nome).predict(X)[0], 0, 10))
+        def score(nome_vect, nome_model, testo):
+            X = get_vectorizer(nome_vect).transform([testo]).toarray()
+            v = float(np.clip(get_model(nome_model).predict(X)[0], 0, 10))
             return round(min(10, max(0, v + random.gauss(0, 0.2))), 1)
 
-        e = score("eleg", descrizioni['eleganza'])
-        d = score("des",  descrizioni['design'])
-        c = score("coer", descrizioni['coerenza'])
+        e = score("eleg", "eleganza", descrizioni['eleganza'])
+        d = score("des",  "design",   descrizioni['design'])
+        c = score("coer", "coerenza", descrizioni['coerenza'])
 
         score_ponderato = (e * 1.0 + d * 0.9 + c * 0.8) / 2.7
 
